@@ -1,0 +1,20 @@
+# Swift Package Manager
+.build/
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+**/Package.resolved.bak
+
+# Xcode (se abrires Package.swift ou projectos futuros)
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Credenciais / ambientes locais
+.env
+.env.*

@@ -2,6 +2,10 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var vm = OrchestratorViewModel()
+    @State private var libraryCollapsed = false
+
+    /// Largura fixa alta legibilidade ao vivo quando colapsado.
+    private let libraryCollapsedRibbonWidth: CGFloat = 52
 
     var body: some View {
         VStack(spacing: 0) {
@@ -9,9 +13,19 @@ struct ContentView: View {
             Divider()
                 .background(LiveTheme.border.opacity(0.35))
 
-            HSplitView {
-                MediaLibraryView(vm: vm)
-                    .frame(minWidth: 300, idealWidth: 340, maxWidth: 480)
+            HStack(alignment: .top, spacing: 0) {
+                if libraryCollapsed {
+                    sidebarExpandRibbon
+                        .frame(width: libraryCollapsedRibbonWidth)
+                } else {
+                    MediaLibraryView(vm: vm, collapsed: $libraryCollapsed)
+                        .frame(minWidth: 300, idealWidth: 356, maxWidth: 492)
+                        .transition(.move(edge: .leading).combined(with: .opacity))
+
+                    Rectangle()
+                        .fill(LiveTheme.border.opacity(0.28))
+                        .frame(width: 2)
+                }
 
                 ScrollView {
                     VStack(spacing: 18) {
@@ -21,8 +35,10 @@ struct ContentView: View {
                     }
                     .padding(16)
                 }
-                .frame(minWidth: 520)
+                .frame(minWidth: 480)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .animation(.easeInOut(duration: 0.22), value: libraryCollapsed)
 
             Divider()
                 .background(LiveTheme.border.opacity(0.35))
@@ -30,8 +46,45 @@ struct ContentView: View {
             AudioControlView(vm: vm)
                 .padding(16)
         }
-        .frame(minWidth: 980, minHeight: 640)
+        .frame(minWidth: 840, minHeight: 640)
         .background(LiveTheme.background)
+    }
+
+    private var sidebarExpandRibbon: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.22)) {
+                libraryCollapsed = false
+            }
+        } label: {
+            VStack {
+                Spacer(minLength: 0)
+                VStack(spacing: 10) {
+                    Image(systemName: "sidebar.squares.leading")
+                        .font(.title2.weight(.black))
+                        .foregroundStyle(Color.black.opacity(0.92))
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 6)
+
+                    Text("MOSTRAR\nBIBLIO.")
+                        .font(.caption.weight(.heavy))
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(LiveTheme.border)
+                        .lineSpacing(2)
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(width: libraryCollapsedRibbonWidth)
+            .frame(maxHeight: .infinity)
+            .background(LiveTheme.panel)
+            .overlay(
+                Rectangle()
+                    .strokeBorder(LiveTheme.border.opacity(0.95), lineWidth: 3)
+                    .allowsHitTesting(false)
+            )
+        }
+        .buttonStyle(.plain)
+        .keyboardShortcut("b", modifiers: .command)
+        .help("Mostrar novamente o painel da biblioteca (⌘B)")
     }
 
     private var header: some View {
@@ -40,7 +93,7 @@ struct ContentView: View {
                 Text("Orquestra visual · painel ao vivo")
                     .font(.title.weight(.heavy))
                     .foregroundStyle(LiveTheme.textPrimary)
-                Text("Duas saídas · biblioteca · efeito por canal · áudio")
+                Text("Duas saídas · bibliotecas vídeo/imagem · áudio separado · efeitos por canal")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(LiveTheme.textSecondary)
             }

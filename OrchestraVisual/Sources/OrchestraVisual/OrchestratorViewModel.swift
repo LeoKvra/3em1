@@ -3,10 +3,30 @@ import AVFoundation
 import Foundation
 import UniformTypeIdentifiers
 
+enum LibraryShelf: Equatable {
+    /// Vídeos e imagens — destino: saídas visuais.
+    case visual
+    /// Sons — biblioteca própria; destino leitor / loop.
+    case audio
+
+    static func classify(url: URL) -> LibraryShelf {
+        let ext = url.pathExtension.lowercased()
+        let audio = ["mp3", "wav", "aac", "m4a", "aiff", "aif", "flac", "ogg"]
+        return audio.contains(ext) ? .audio : .visual
+    }
+}
+
 struct LibraryItem: Identifiable, Equatable {
-    let id = UUID()
+    let id: UUID
     let url: URL
+    let shelf: LibraryShelf
     var name: String { url.lastPathComponent }
+
+    init(url: URL, id: UUID = UUID()) {
+        self.id = id
+        self.url = url
+        self.shelf = LibraryShelf.classify(url: url)
+    }
 }
 
 enum MediaKind {
@@ -18,6 +38,7 @@ enum MediaKind {
         let ext = url.pathExtension.lowercased()
         let image = ["jpg", "jpeg", "png", "heic", "gif", "tiff", "bmp", "webp"]
         let video = ["mov", "mp4", "m4v", "avi", "mkv", "webm"]
+        if LibraryShelf.classify(url: url) == .audio { return .unknown }
         if image.contains(ext) { return .image }
         if video.contains(ext) { return .video }
         return .unknown
@@ -53,30 +74,62 @@ final class OrchestratorViewModel: ObservableObject {
 
     // MARK: - Biblioteca
 
-    func addLibraryFilesViaPanel() {
+    var visualLibrary: [LibraryItem] { library.filter { $0.shelf == .visual } }
+    var audioLibrary: [LibraryItem] { library.filter { $0.shelf == .audio } }
+
+    /// Selecção pode associar-se a uma saída de vídeo.
+    var selectionCanAssignToChannel: Bool {
+        guard let sid = selection, let item = library.first(where: { $0.id == sid }) else { return false }
+        return item.shelf == .visual
+    }
+
+    /// Selecção é áudio e pode ir para o leitor.
+    var selectionCanAssignToAudioDeck: Bool {
+        guard let sid = selection, let item = library.first(where: { $0.id == sid }) else { return false }
+        return item.shelf == .audio
+    }
+
+    func addVisualLibraryFilesViaPanel() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowedContentTypes = [.image, .movie, .video, .mpeg4Movie, .quickTimeMovie, .png, .jpeg, .gif]
         guard panel.runModal() == .OK else { return }
-        addToLibrary(panel.urls)
+        addURLsToLibrary(panel.urls, expectedShelf: .visual)
+    }
+
+    func addAudioLibraryFilesViaPanel() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.audio, .mp3, .mpeg4Audio, .wav, .aiff]
+        guard panel.runModal() == .OK else { return }
+        addURLsToLibrary(panel.urls, expectedShelf: .audio)
     }
 
     func removeFromLibrary(_ item: LibraryItem) {
         library.removeAll { $0.id == item.id }
         if selection == item.id { selection = nil }
+        if item.shelf == .audio, audioURL == item.url {
+            stopAudio()
+            audioURL = nil
+        }
         let touching = channels.filter { $0.assignedURL == item.url }.map(\.id)
         for id in touching {
             clearChannel(channelId: id)
         }
     }
 
-    func addToLibrary(_ urls: [URL]) {
+    private func addURLsToLibrary(_ urls: [URL], expectedShelf: LibraryShelf) {
         urls.forEach { _ = $0.startAccessingSecurityScopedResource() }
-        let newItems = urls.map { LibraryItem(url: $0) }
-        library.append(contentsOf: newItems)
-        if selection == nil { selection = newItems.first?.id }
+        let classified = urls.map { LibraryItem(url: $0) }
+        let filtered = classified.filter { $0.shelf == expectedShelf }
+        library.append(contentsOf: filtered)
+        if selection == nil, let first = filtered.first {
+            selection = first.id
+        }
     }
 
     func selectLibraryItem(_ id: UUID?) {
@@ -84,13 +137,24 @@ final class OrchestratorViewModel: ObservableObject {
     }
 
     func assignSelectionToChannel(_ channelId: Int) {
-        guard let sel = selection, let item = library.first(where: { $0.id == sel }) else { return }
+        guard selectionCanAssignToChannel,
+              let item = library.first(where: { $0.id == selection }) else { return }
         assignMedia(item.url, to: channelId)
+    }
+
+    /// Carrega no leitor de áudio o ficheiro atualmente seleccionado na biblioteca de áudio.
+    func assignSelectionToAudioDeck() {
+        guard selectionCanAssignToAudioDeck,
+              let item = library.first(where: { $0.id == selection }) else { return }
+        stopAudio()
+        _ = item.url.startAccessingSecurityScopedResource()
+        audioURL = item.url
     }
 
     // MARK: - Canais
 
     func assignMedia(_ url: URL, to channelId: Int) {
+        guard LibraryShelf.classify(url: url) == .visual else { return }
         _ = url.startAccessingSecurityScopedResource()
         teardownPlayer(for: channelId)
         switch MediaKind.of(url: url) {

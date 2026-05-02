@@ -15,6 +15,13 @@ struct AudioControlView: View {
                 }
                 .buttonStyle(LiveSecondaryButtonStyle())
 
+                Button("Da biblioteca → leitor") {
+                    vm.assignSelectionToAudioDeck()
+                }
+                .buttonStyle(LiveSecondaryButtonStyle())
+                .disabled(!vm.selectionCanAssignToAudioDeck)
+                .help("Selecione um áudio na secção Biblioteca › Áudio e carregue no leitor.")
+
                 Button("Tocar") {
                     vm.playAudio()
                 }

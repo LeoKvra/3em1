@@ -53,7 +53,8 @@ struct ChannelStripView: View {
                     vm.assignSelectionToChannel(channel.id)
                 }
                 .buttonStyle(LiveSecondaryButtonStyle())
-                .disabled(vm.selection == nil)
+                .disabled(!vm.selectionCanAssignToChannel)
+                .help("Selecione um vídeo ou imagem na biblioteca antes de associar.")
             }
 
             Rectangle()
