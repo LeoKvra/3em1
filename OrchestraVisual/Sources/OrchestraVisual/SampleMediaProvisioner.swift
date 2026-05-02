@@ -1,10 +1,14 @@
+import CoreGraphics
 import Foundation
 
-/// Vídeos e imagens de amostra: primeiro `Bundle.module` (`Resources/SampleMedia`), depois gera `.mov` em cache se algum recurso bundle faltar.
+/// Vídeos e imagens de amostra: primeiro `Bundle.module` (`Resources/SampleMedia`), depois gera em cache se faltar algum recurso.
 enum SampleMediaProvisioner {
 
     nonisolated static func bootstrapVisualURLs() throws -> [URL] {
         var ordered: [URL] = []
+
+        let jamaicaURL = try resolveJamaicaSample()
+        ordered.append(jamaicaURL)
 
         let magentaURL = try resolveVideo(
             bundledBase: "amostra_video_magenta",
@@ -34,6 +38,24 @@ enum SampleMediaProvisioner {
         return ordered
     }
 
+    private nonisolated static func resolveJamaicaSample() throws -> URL {
+        if let bundled = Bundle.module.url(forResource: "amostra_jamaica", withExtension: "mov", subdirectory: "SampleMedia") {
+            return bundled
+        }
+
+        let cacheRoot = try cacheDirectory()
+        let cached = cacheRoot.appendingPathComponent("amostra_jamaica.mov", isDirectory: false)
+        if !FileManager.default.fileExists(atPath: cached.path) {
+            try SampleMovieGenerator.encodeJamaicaPulseMOV(
+                to: cached,
+                size: SampleMovieGenerator.outputSize,
+                durationSeconds: 12,
+                fps: 30
+            )
+        }
+        return cached
+    }
+
     private nonisolated static func resolveVideo(
         bundledBase: String,
         cacheFileName: String,
@@ -48,9 +70,9 @@ enum SampleMediaProvisioner {
         if !FileManager.default.fileExists(atPath: cached.path) {
             try SampleMovieGenerator.encodeSolidColorMOV(
                 to: cached,
-                size: CGSize(width: 640, height: 360),
-                durationSeconds: 4,
-                fps: 24,
+                size: SampleMovieGenerator.outputSize,
+                durationSeconds: 5,
+                fps: 30,
                 rgb: rgb
             )
         }

@@ -103,10 +103,23 @@ final class OrchestratorViewModel: ObservableObject {
     private func wireStarterAssignments(from items: [LibraryItem]) {
         let videos = items.filter { MediaKind.of(url: $0.url) == .video }
         if !videos.isEmpty {
-            let first = videos[0].url
-            let second = (videos.count > 1 ? videos[1] : videos[0]).url
-            assignMedia(first, to: 0)
-            assignMedia(second, to: 1)
+            let jam = videos.first { $0.url.lastPathComponent.localizedStandardContains("jamaica") }
+
+            let urlA: URL
+            let urlB: URL
+            if let jam, let other = videos.first(where: { $0.url != jam.url }) {
+                urlA = jam.url
+                urlB = other.url
+            } else if let jam {
+                urlA = jam.url
+                urlB = jam.url
+            } else {
+                urlA = videos[0].url
+                urlB = (videos.count > 1 ? videos[1] : videos[0]).url
+            }
+
+            assignMedia(urlA, to: 0)
+            assignMedia(urlB, to: 1)
             start(channelId: 0)
             start(channelId: 1)
             return

@@ -43,7 +43,7 @@ struct MediaLibraryView: View {
             }
             .padding(.bottom, 10)
 
-            Text("Inclui amostras no pacote: dois vídeos .mov + três imagens PNG · primeiro arranque sem MOV no pacote regenera só em cache · áudio é separado abaixo.")
+            Text("Inclui Jamaica (verde·ouro·preto em rotação), vídeos sólidos magenta/ciano e três PNG · 848×480 múltiplo de 16 (H.264) · áudio abaixo.")
                 .font(.callout.weight(.medium))
                 .foregroundStyle(LiveTheme.textSecondary)
                 .padding(.bottom, 14)

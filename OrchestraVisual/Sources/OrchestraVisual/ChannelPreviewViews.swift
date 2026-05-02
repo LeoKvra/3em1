@@ -8,9 +8,11 @@ final class PreviewPlayerContainerView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
+        layer?.masksToBounds = true
         layer?.backgroundColor = NSColor.black.cgColor
         playerLayer.videoGravity = .resizeAspect
         playerLayer.backgroundColor = NSColor.black.cgColor
+        playerLayer.isOpaque = true
         layer?.addSublayer(playerLayer)
     }
 
@@ -41,6 +43,7 @@ struct AVPlayerPreview: NSViewRepresentable {
     }
 }
 
+/// Filtros de cor no `NSView` com `AVPlayerLayer` costumam anular o vídeo no macOS; só aplicamos quando “Efeito” está ligado.
 struct ChannelPreviewContent: View {
     let url: URL?
     let player: AVPlayer?
@@ -62,21 +65,27 @@ struct ChannelPreviewContent: View {
                     placeholder("Preview indisponível")
                 }
             } else if let url, MediaKind.of(url: url) == .video {
-                AVPlayerPreview(player: player)
-                    .saturation(effectOn ? 0.2 : 1)
-                    .contrast(effectOn ? 1.2 : 1)
-                    .brightness(effectOn ? 0.04 : 0)
-                    .overlay {
-                        if !isPlaying {
-                            Text("PAUSA")
-                                .font(.title2.weight(.heavy))
-                                .foregroundStyle(LiveTheme.border)
-                                .padding(10)
-                                .background(Color.black.opacity(0.55))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                ZStack {
+                    Group {
+                        if effectOn {
+                            AVPlayerPreview(player: player)
+                                .saturation(0.2)
+                                .contrast(1.2)
+                                .brightness(0.04)
+                        } else {
+                            AVPlayerPreview(player: player)
                         }
                     }
-                    .allowsHitTesting(false)
+                    if !isPlaying {
+                        Text("PAUSA")
+                            .font(.title2.weight(.heavy))
+                            .foregroundStyle(LiveTheme.border)
+                            .padding(10)
+                            .background(Color.black.opacity(0.55))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+                .allowsHitTesting(false)
             } else {
                 placeholder("Nenhuma mídia\nAtribuir da biblioteca")
             }
