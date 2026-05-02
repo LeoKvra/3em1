@@ -43,7 +43,7 @@ struct MediaLibraryView: View {
             }
             .padding(.bottom, 10)
 
-            Text("Selecione uma peça nas secções abaixo · visuais vão para as saídas · áudio para o leitor de baixo.")
+            Text("Inclui amostras no pacote: dois vídeos .mov + três imagens PNG · primeiro arranque sem MOV no pacote regenera só em cache · áudio é separado abaixo.")
                 .font(.callout.weight(.medium))
                 .foregroundStyle(LiveTheme.textSecondary)
                 .padding(.bottom, 14)

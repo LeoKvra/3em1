@@ -71,6 +71,55 @@ final class OrchestratorViewModel: ObservableObject {
 
     private var players: [Int: AVPlayer] = [:]
     private var audioPlayer: AVAudioPlayer?
+    /// Observadores `AVPlayerItemDidPlayToEndTime` por canal para loop local (demos ao vivo).
+    private var videoEndObservers: [Int: NSObjectProtocol] = [:]
+
+    // MARK: - Arranque (amostras + previews)
+
+    /// Carrega imagens incluídas no pacote, gera dois `.mov` de teste e preenche a biblioteca quando vazia.
+    /// Atribui vídeo distinto por saída e inicia reprodução nos dois previews (decodificadores em paralelo).
+    func bootstrapStarterLibraryIfNeeded() async {
+        guard library.isEmpty else { return }
+
+        let urls: [URL]
+        do {
+            urls = try await Task.detached(priority: .userInitiated) {
+                try SampleMediaProvisioner.bootstrapVisualURLs()
+            }.value
+        } catch {
+            return
+        }
+
+        urls.forEach { _ = $0.startAccessingSecurityScopedResource() }
+
+        let items = urls.map { LibraryItem(url: $0) }
+        library = items
+
+        wireStarterAssignments(from: items)
+        selection = items.first?.id
+    }
+
+    /// Define mídia inicial nas duas saídas: dois vídeos diferentes se existirem; caso só existam imagens, duplica só imagem.
+    private func wireStarterAssignments(from items: [LibraryItem]) {
+        let videos = items.filter { MediaKind.of(url: $0.url) == .video }
+        if !videos.isEmpty {
+            let first = videos[0].url
+            let second = (videos.count > 1 ? videos[1] : videos[0]).url
+            assignMedia(first, to: 0)
+            assignMedia(second, to: 1)
+            start(channelId: 0)
+            start(channelId: 1)
+            return
+        }
+
+        let imgs = items.filter { MediaKind.of(url: $0.url) == .image }
+        guard let a = imgs.first else { return }
+        let secondURL = imgs[safe: 1]?.url ?? a.url
+        assignMedia(a.url, to: 0)
+        assignMedia(secondURL, to: 1)
+        start(channelId: 0)
+        start(channelId: 1)
+    }
 
     // MARK: - Biblioteca
 
@@ -160,6 +209,7 @@ final class OrchestratorViewModel: ObservableObject {
         switch MediaKind.of(url: url) {
         case .video:
             players[channelId] = AVPlayer(url: url)
+            attachVideoLoop(for: channelId)
             updateChannel(channelId) { ch in
                 ch.assignedURL = url
                 ch.isPlaying = false
@@ -178,6 +228,7 @@ final class OrchestratorViewModel: ObservableObject {
         case .video:
             let player = players[channelId] ?? AVPlayer(url: url)
             players[channelId] = player
+            attachVideoLoop(for: channelId)
             player.play()
             updateChannel(channelId) { $0.isPlaying = true }
         case .image, .unknown:
@@ -215,9 +266,34 @@ final class OrchestratorViewModel: ObservableObject {
     }
 
     private func teardownPlayer(for channelId: Int) {
+        detachVideoLoop(for: channelId)
         guard let player = players[channelId] else { return }
         player.pause()
         players.removeValue(forKey: channelId)
+    }
+
+    private func detachVideoLoop(for channelId: Int) {
+        if let token = videoEndObservers[channelId] {
+            NotificationCenter.default.removeObserver(token)
+            videoEndObservers[channelId] = nil
+        }
+    }
+
+    private func attachVideoLoop(for channelId: Int) {
+        detachVideoLoop(for: channelId)
+        guard let player = players[channelId],
+              let item = player.currentItem else { return }
+
+        videoEndObservers[channelId] = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak player] notification in
+            guard let notifiedItem = notification.object as? AVPlayerItem else { return }
+            guard let p = player, p.currentItem === notifiedItem else { return }
+            p.seek(to: .zero)
+            p.play()
+        }
     }
 
     func player(for channelId: Int) -> AVPlayer? {

@@ -12,7 +12,8 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "OrchestraVisual",
-            path: "Sources/OrchestraVisual"
+            path: "Sources/OrchestraVisual",
+            resources: [.copy("Resources/SampleMedia")]
         ),
     ]
 )

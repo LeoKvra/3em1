@@ -48,6 +48,9 @@ struct ContentView: View {
         }
         .frame(minWidth: 840, minHeight: 640)
         .background(LiveTheme.background)
+        .task {
+            await vm.bootstrapStarterLibraryIfNeeded()
+        }
     }
 
     private var sidebarExpandRibbon: some View {
@@ -93,7 +96,7 @@ struct ContentView: View {
                 Text("Orquestra visual · painel ao vivo")
                     .font(.title.weight(.heavy))
                     .foregroundStyle(LiveTheme.textPrimary)
-                Text("Duas saídas · bibliotecas vídeo/imagem · áudio separado · efeitos por canal")
+                Text("Duas saídas · demos visuais + biblioteca própria · áudio · efeitos por canal")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(LiveTheme.textSecondary)
             }
