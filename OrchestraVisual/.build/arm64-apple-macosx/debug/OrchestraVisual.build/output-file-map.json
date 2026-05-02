@@ -1,0 +1,61 @@
+{
+  "": {
+    "swift-dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/master.swiftdeps"
+  },
+  "/Users/leo/Projetos/3em1/OrchestraVisual/Sources/OrchestraVisual/AudioControlView.swift": {
+    "dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/AudioControlView.d",
+    "object": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/AudioControlView.swift.o",
+    "swiftmodule": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/AudioControlView~partial.swiftmodule",
+    "swift-dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/AudioControlView.swiftdeps",
+    "diagnostics": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/AudioControlView.dia"
+  },
+  "/Users/leo/Projetos/3em1/OrchestraVisual/Sources/OrchestraVisual/ChannelPreviewViews.swift": {
+    "dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ChannelPreviewViews.d",
+    "object": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ChannelPreviewViews.swift.o",
+    "swiftmodule": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ChannelPreviewViews~partial.swiftmodule",
+    "swift-dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ChannelPreviewViews.swiftdeps",
+    "diagnostics": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ChannelPreviewViews.dia"
+  },
+  "/Users/leo/Projetos/3em1/OrchestraVisual/Sources/OrchestraVisual/ChannelStripViews.swift": {
+    "dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ChannelStripViews.d",
+    "object": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ChannelStripViews.swift.o",
+    "swiftmodule": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ChannelStripViews~partial.swiftmodule",
+    "swift-dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ChannelStripViews.swiftdeps",
+    "diagnostics": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ChannelStripViews.dia"
+  },
+  "/Users/leo/Projetos/3em1/OrchestraVisual/Sources/OrchestraVisual/ContentView.swift": {
+    "dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ContentView.d",
+    "object": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ContentView.swift.o",
+    "swiftmodule": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ContentView.swiftdeps",
+    "diagnostics": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/ContentView.dia"
+  },
+  "/Users/leo/Projetos/3em1/OrchestraVisual/Sources/OrchestraVisual/LiveTheme.swift": {
+    "dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/LiveTheme.d",
+    "object": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/LiveTheme.swift.o",
+    "swiftmodule": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/LiveTheme~partial.swiftmodule",
+    "swift-dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/LiveTheme.swiftdeps",
+    "diagnostics": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/LiveTheme.dia"
+  },
+  "/Users/leo/Projetos/3em1/OrchestraVisual/Sources/OrchestraVisual/MediaLibraryView.swift": {
+    "dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/MediaLibraryView.d",
+    "object": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/MediaLibraryView.swift.o",
+    "swiftmodule": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/MediaLibraryView~partial.swiftmodule",
+    "swift-dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/MediaLibraryView.swiftdeps",
+    "diagnostics": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/MediaLibraryView.dia"
+  },
+  "/Users/leo/Projetos/3em1/OrchestraVisual/Sources/OrchestraVisual/OrchestraVisualApp.swift": {
+    "dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/OrchestraVisualApp.d",
+    "object": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/OrchestraVisualApp.swift.o",
+    "swiftmodule": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/OrchestraVisualApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/OrchestraVisualApp.swiftdeps",
+    "diagnostics": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/OrchestraVisualApp.dia"
+  },
+  "/Users/leo/Projetos/3em1/OrchestraVisual/Sources/OrchestraVisual/OrchestratorViewModel.swift": {
+    "dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/OrchestratorViewModel.d",
+    "object": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/OrchestratorViewModel.swift.o",
+    "swiftmodule": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/OrchestratorViewModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/OrchestratorViewModel.swiftdeps",
+    "diagnostics": "/Users/leo/Projetos/3em1/OrchestraVisual/.build/arm64-apple-macosx/debug/OrchestraVisual.build/OrchestratorViewModel.dia"
+  }
+}
