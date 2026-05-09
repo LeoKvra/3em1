@@ -16,6 +16,10 @@ struct ChannelStripView: View {
                 playbackBadge
             }
 
+            Text("Canvas programa · \(LiveCanvasMetrics.displayLabel)")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(LiveTheme.textSecondary)
+
             ChannelPreviewContent(
                 url: channel.assignedURL,
                 player: vm.player(for: channel.id),
@@ -34,7 +38,8 @@ struct ChannelStripView: View {
                     ? { vm.restartFromBeginning(channelId: channel.id) }
                     : nil
             )
-            .frame(minHeight: 220)
+            .aspectRatio(LiveCanvasMetrics.aspectRatio, contentMode: .fit)
+            .frame(maxWidth: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .liveOutline(focused: channel.isPlaying && channel.assignedURL != nil)
 

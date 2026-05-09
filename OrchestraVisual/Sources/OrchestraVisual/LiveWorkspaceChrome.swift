@@ -154,15 +154,15 @@ struct GeneralLivePlaceholder: View {
                 Text("LIVE GERAL")
                     .font(.title2.weight(.heavy))
                     .foregroundStyle(LiveTheme.border)
-                Text("Placeholder para overview / master.\nDetalhes nas próximas fases.")
+                Text("Overview / master · mesmo canvas de referência \(LiveCanvasMetrics.displayLabel).")
                     .font(.callout.weight(.medium))
                     .foregroundStyle(LiveTheme.textSecondary)
                     .multilineTextAlignment(.center)
             }
             .padding(24)
         }
+        .aspectRatio(LiveCanvasMetrics.aspectRatio, contentMode: .fit)
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 260)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -203,7 +203,7 @@ struct LabTabPlaceholder: View {
             Text("Lab · \(liveTitle)")
                 .font(.title2.weight(.heavy))
                 .foregroundStyle(LiveTheme.textPrimary)
-            Text("Montagem de timelines e camadas (opacidade, efeitos) para esta live.\nConteúdo a partir da Fase 4.")
+            Text("Canvas desta live: \(LiveCanvasMetrics.displayLabel). Montagem de timelines em camadas (opacidade, efeitos) — Fase 4+.")
                 .font(.callout.weight(.medium))
                 .foregroundStyle(LiveTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

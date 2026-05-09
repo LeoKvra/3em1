@@ -155,7 +155,7 @@ struct ContentView: View {
                 Text("Orquestra visual · painel ao vivo")
                     .font(.title.weight(.heavy))
                     .foregroundStyle(LiveTheme.textPrimary)
-                Text("Fase 2 · lives/canais dinâmicos · abas Live/Lab · até \(LiveSlot.maxProgramLives) lives de programa · biblioteca à esquerda")
+                Text("Fase 3 · canvas \(LiveCanvasMetrics.displayLabel) por live · lives dinâmicos · abas Live/Lab · biblioteca à esquerda")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(LiveTheme.textSecondary)
             }
