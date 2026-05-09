@@ -27,20 +27,38 @@ struct ChannelStripView: View {
             .liveOutline(focused: channel.isPlaying && channel.assignedURL != nil)
 
             HStack(spacing: 10) {
-                Button("Iniciar") {
+                Button("Reproduzir") {
                     vm.start(channelId: channel.id)
                 }
                 .buttonStyle(LiveProminentButtonStyle(tint: LiveTheme.success))
+                .disabled(!hasAssignedMedia || channel.isPlaying)
+                .help("Inicia ou retoma (vídeo) a partir do ponto actual; em imagem, mostra a pré-visualização em destaque.")
 
-                Button("Parar") {
-                    vm.stop(channelId: channel.id)
+                Button("Pausa") {
+                    vm.pause(channelId: channel.id)
                 }
                 .buttonStyle(LiveProminentButtonStyle(tint: LiveTheme.danger))
+                .disabled(!hasAssignedMedia || !channel.isPlaying)
+                .help("Pausa sem voltar ao primeiro frame.")
+
+                Button("Do início") {
+                    vm.restartFromBeginning(channelId: channel.id)
+                }
+                .buttonStyle(LiveSecondaryButtonStyle())
+                .disabled(!hasAssignedMedia || !isAssignedVideo)
+                .help("Salta para o início do vídeo e fica em pausa até carregar em Reproduzir.")
 
                 Button("Efeito") {
                     vm.toggleEffect(channelId: channel.id)
                 }
                 .buttonStyle(LiveToggleButtonStyle(isOn: channel.effectOn))
+
+                Button("Som original") {
+                    vm.toggleVideoAudioMute(channelId: channel.id)
+                }
+                .buttonStyle(LiveToggleButtonStyle(isOn: !channel.videoAudioMuted))
+                .disabled(!canMuteEmbeddedVideoAudio)
+                .help("Áudio embutido no ficheiro de vídeo. Cinzento = sem som nesta saída; verde = a ouvir. É independente do leitor «Áudio» em baixo.")
 
                 Button("Limpar canal") {
                     vm.clearChannel(channelId: channel.id)
@@ -99,5 +117,18 @@ struct ChannelStripView: View {
     private func fileLabel() -> String {
         guard let u = channel.assignedURL else { return "Sem ficheiro" }
         return u.lastPathComponent
+    }
+
+    /// Só faz sentido mutar o som embutido quando há vídeo (não imagem estática).
+    private var canMuteEmbeddedVideoAudio: Bool {
+        guard let u = channel.assignedURL else { return false }
+        return MediaKind.of(url: u) == .video
+    }
+
+    private var hasAssignedMedia: Bool { channel.assignedURL != nil }
+
+    private var isAssignedVideo: Bool {
+        guard let u = channel.assignedURL else { return false }
+        return MediaKind.of(url: u) == .video
     }
 }

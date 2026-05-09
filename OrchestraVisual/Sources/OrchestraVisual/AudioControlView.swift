@@ -39,6 +39,24 @@ struct AudioControlView: View {
                 statusPill
             }
 
+            HStack(spacing: 10) {
+                Text("Som embutido nos vídeos (todas as saídas)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(LiveTheme.textSecondary)
+
+                Button("Mutar tudo") {
+                    vm.setAllVideoEmbeddedAudioMuted(true)
+                }
+                .buttonStyle(LiveSecondaryButtonStyle())
+
+                Button("Som em todos") {
+                    vm.setAllVideoEmbeddedAudioMuted(false)
+                }
+                .buttonStyle(LiveSecondaryButtonStyle())
+
+                Spacer(minLength: 0)
+            }
+
             if let url = vm.audioURL {
                 Text(url.lastPathComponent)
                     .font(.callout.weight(.semibold))

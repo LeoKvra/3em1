@@ -53,14 +53,16 @@ struct ChannelState: Identifiable, Equatable {
     var isPlaying: Bool
     /// Efeito em tempo real no preview (alto contraste / mono simplificado visual)
     var effectOn: Bool
+    /// Áudio embutido no ficheiro de vídeo (independente do leitor de áudio da barra inferior).
+    var videoAudioMuted: Bool
 }
 
 @MainActor
 final class OrchestratorViewModel: ObservableObject {
 
     private static let defaultChannels = [
-        ChannelState(id: 0, title: "Saída 1 · Fundo widescreen", assignedURL: nil, isPlaying: false, effectOn: false),
-        ChannelState(id: 1, title: "Saída 2 · Pano / músico", assignedURL: nil, isPlaying: false, effectOn: false),
+        ChannelState(id: 0, title: "Saída 1 · Fundo widescreen", assignedURL: nil, isPlaying: false, effectOn: false, videoAudioMuted: false),
+        ChannelState(id: 1, title: "Saída 2 · Pano / músico", assignedURL: nil, isPlaying: false, effectOn: false, videoAudioMuted: false),
     ]
 
     @Published private(set) var channels: [ChannelState] = defaultChannels
@@ -208,7 +210,10 @@ final class OrchestratorViewModel: ObservableObject {
         teardownPlayer(for: channelId)
         switch MediaKind.of(url: url) {
         case .video:
-            players[channelId] = AVPlayer(url: url)
+            let muted = channels.first(where: { $0.id == channelId })?.videoAudioMuted ?? false
+            let player = AVPlayer(url: url)
+            player.isMuted = muted
+            players[channelId] = player
             attachVideoLoop(for: channelId)
             updateChannel(channelId) { ch in
                 ch.assignedURL = url
@@ -226,7 +231,9 @@ final class OrchestratorViewModel: ObservableObject {
         guard let url = channels.first(where: { $0.id == channelId })?.assignedURL else { return }
         switch MediaKind.of(url: url) {
         case .video:
+            let muted = channels.first(where: { $0.id == channelId })?.videoAudioMuted ?? false
             let player = players[channelId] ?? AVPlayer(url: url)
+            player.isMuted = muted
             players[channelId] = player
             attachVideoLoop(for: channelId)
             player.play()
@@ -236,12 +243,24 @@ final class OrchestratorViewModel: ObservableObject {
         }
     }
 
-    func stop(channelId: Int) {
-        if let url = channels.first(where: { $0.id == channelId })?.assignedURL,
-           MediaKind.of(url: url) == .video {
+    /// Pausa sem mudar a posição na linha de tempo (vídeo ou estado visual da imagem).
+    func pause(channelId: Int) {
+        guard let url = channels.first(where: { $0.id == channelId })?.assignedURL else { return }
+        switch MediaKind.of(url: url) {
+        case .video:
             players[channelId]?.pause()
-            players[channelId]?.seek(to: .zero)
+            updateChannel(channelId) { $0.isPlaying = false }
+        case .image, .unknown:
+            updateChannel(channelId) { $0.isPlaying = false }
         }
+    }
+
+    /// Volta ao primeiro frame e mantém em pausa até «Reproduzir» (só vídeo).
+    func restartFromBeginning(channelId: Int) {
+        guard let url = channels.first(where: { $0.id == channelId })?.assignedURL else { return }
+        guard MediaKind.of(url: url) == .video else { return }
+        players[channelId]?.pause()
+        players[channelId]?.seek(to: .zero)
         updateChannel(channelId) { $0.isPlaying = false }
     }
 
@@ -249,13 +268,34 @@ final class OrchestratorViewModel: ObservableObject {
         updateChannel(channelId) { $0.effectOn.toggle() }
     }
 
+    func toggleVideoAudioMute(channelId: Int) {
+        guard let url = channels.first(where: { $0.id == channelId })?.assignedURL,
+              MediaKind.of(url: url) == .video else { return }
+        updateChannel(channelId) { $0.videoAudioMuted.toggle() }
+        syncVideoAudioMute(for: channelId)
+    }
+
+    /// Som embutido em todos os canais (prepara saídas com vídeo; ao atribuir vídeo novo, herda o estado).
+    func setAllVideoEmbeddedAudioMuted(_ muted: Bool) {
+        for id in channels.map(\.id) {
+            updateChannel(id) { $0.videoAudioMuted = muted }
+            syncVideoAudioMute(for: id)
+        }
+    }
+
     func clearChannel(channelId: Int) {
-        stop(channelId: channelId)
+        pause(channelId: channelId)
         teardownPlayer(for: channelId)
         updateChannel(channelId) { ch in
             ch.assignedURL = nil
             ch.effectOn = false
+            ch.videoAudioMuted = false
         }
+    }
+
+    private func syncVideoAudioMute(for channelId: Int) {
+        guard let muted = channels.first(where: { $0.id == channelId })?.videoAudioMuted else { return }
+        players[channelId]?.isMuted = muted
     }
 
     private func updateChannel(_ channelId: Int, _ mutate: (inout ChannelState) -> Void) {
