@@ -55,7 +55,7 @@ struct ChannelState: Identifiable, Equatable {
     var effectOn: Bool
     /// Áudio embutido no vídeo (independente do leitor da barra inferior). Por defeito começa mutado.
     var videoAudioMuted: Bool
-    /// Efeito visual da live (pixel / falha); independente do botão «Efeito» (alto contraste).
+    /// Efeito visual da live (P&B / falha); independente do botão «Efeito» (alto contraste).
     var visualEffectMode: LiveVisualEffectMode = .none
 }
 

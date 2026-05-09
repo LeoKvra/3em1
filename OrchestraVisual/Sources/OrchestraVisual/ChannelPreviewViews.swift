@@ -93,8 +93,6 @@ struct ChannelPreviewContent: View {
     let isPlaying: Bool
     let effectOn: Bool
     var visualEffectMode: LiveVisualEffectMode
-    /// Actualização contínua do modo pixel em vídeo (desliga nas miniaturas das pills para poupar CPU).
-    var animatePixelEffect: Bool
     /// Só vídeo: clique alterna pausa/reprodução; duplo clique volta ao início.
     var onVideoSingleTap: (() -> Void)?
     var onVideoDoubleTap: (() -> Void)?
@@ -105,7 +103,6 @@ struct ChannelPreviewContent: View {
         isPlaying: Bool,
         effectOn: Bool,
         visualEffectMode: LiveVisualEffectMode = .none,
-        animatePixelEffect: Bool = true,
         onVideoSingleTap: (() -> Void)? = nil,
         onVideoDoubleTap: (() -> Void)? = nil
     ) {
@@ -114,7 +111,6 @@ struct ChannelPreviewContent: View {
         self.isPlaying = isPlaying
         self.effectOn = effectOn
         self.visualEffectMode = visualEffectMode
-        self.animatePixelEffect = animatePixelEffect
         self.onVideoSingleTap = onVideoSingleTap
         self.onVideoDoubleTap = onVideoDoubleTap
     }
@@ -156,7 +152,7 @@ struct ChannelPreviewContent: View {
                             .aspectRatio(contentMode: .fit)
                     }
                 }
-                .modifier(PixelWorldModifier(enabled: visualEffectMode == .pixelWorld, animates: false))
+                .modifier(MonochromeLookModifier(enabled: visualEffectMode == .monochrome))
             } else {
                 placeholder("Não consegui ler a imagem\n(tenta exportar doutro formato)")
             }
@@ -209,7 +205,7 @@ struct ChannelPreviewContent: View {
                     AVPlayerPreview(player: player)
                 }
             }
-            .modifier(PixelWorldModifier(enabled: visualEffectMode == .pixelWorld, animates: animatePixelEffect))
+            .modifier(MonochromeLookModifier(enabled: visualEffectMode == .monochrome))
             .allowsHitTesting(false)
 
             if !isPlaying {

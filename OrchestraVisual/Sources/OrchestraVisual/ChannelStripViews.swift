@@ -42,7 +42,7 @@ struct ChannelStripView: View {
                 .pickerStyle(.segmented)
                 .frame(maxWidth: .infinity)
                 .accessibilityLabel("Look da live")
-                .accessibilityHint("Sem efeito, mundo pixel ou falha aleatória.")
+                .accessibilityHint("Sem efeito, preto e branco ou falha aleatória.")
             }
 
             HStack {

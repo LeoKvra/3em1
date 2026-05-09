@@ -3,7 +3,7 @@ import SwiftUI
 /// Efeito visual global da live (separado do botão «Alto contraste» na faixa do canal).
 enum LiveVisualEffectMode: String, CaseIterable, Identifiable, Equatable {
     case none = "Sem efeito"
-    case pixelWorld = "Mundo pixel"
+    case monochrome = "Preto e branco"
     case randomGlitch = "Falha aleatória"
 
     var id: String { rawValue }
@@ -12,105 +12,24 @@ enum LiveVisualEffectMode: String, CaseIterable, Identifiable, Equatable {
     var segmentLabel: String {
         switch self {
         case .none: return "Normal"
-        case .pixelWorld: return "Pixel"
+        case .monochrome: return "P&B"
         case .randomGlitch: return "Falha"
         }
     }
 }
 
-// MARK: - Mundo pixel (estilo Minecraft — raster baixo + upscale nearest-neighbour)
+// MARK: - Preto e branco
 
-/// Rasteriza a vista a poucos pixels de largura (`ImageRenderer`) e estica com `interpolation(.none)` —
-/// na retina, `scaleEffect` sozinho continua suave; assim os quadrados ficam mesmo «blocos».
-private struct CrispBlockPixelView<Content: View>: View {
-    @Environment(\.displayScale) private var displayScale
-
-    let content: Content
-    let size: CGSize
-    let blockSize: CGFloat
-    /// `true` para vídeo (actualiza ~20×/s); `false` para imagem estática (só quando muda o layout).
-    let animates: Bool
-
-    @State private var bitmap: CGImage?
-
-    private var layoutKey: String {
-        "\(Int(size.width))×\(Int(size.height))×\(Int(blockSize * 10))"
-    }
-
-    var body: some View {
-        Group {
-            if animates {
-                TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: false)) { ctx in
-                    pixelSurface
-                        .task(id: ctx.date.timeIntervalSinceReferenceDate) {
-                            rasterize()
-                        }
-                }
-            } else {
-                pixelSurface
-                    .task(id: layoutKey) {
-                        rasterize()
-                    }
-            }
-        }
-    }
-
-    private var pixelSurface: some View {
-        Group {
-            if let bitmap {
-                Image(decorative: bitmap, scale: 1)
-                    .interpolation(.none)
-                    .resizable()
-                    .frame(width: size.width, height: size.height)
-            } else {
-                Color.black.opacity(0.94)
-                    .frame(width: size.width, height: size.height)
-            }
-        }
-        .frame(width: size.width, height: size.height)
-        .clipped()
-        .onAppear {
-            rasterize()
-        }
-    }
-
-    @MainActor
-    private func rasterize() {
-        let bs = max(6, blockSize)
-        // Preto-e-branco antes de subamostrar: menos artefactos de cor no raster e blocos mais legíveis.
-        let source = content
-            .frame(width: size.width, height: size.height)
-            .saturation(0)
-            .contrast(1.18)
-            .brightness(0.02)
-        let renderer = ImageRenderer(content: source)
-        renderer.proposedSize = ProposedViewSize(width: size.width, height: size.height)
-        // Pixels ≈ pontos × scale = pontos × (displayScale/bs) → ~1 bloco de bs pt por cada célula no raster.
-        renderer.scale = displayScale / bs
-        bitmap = renderer.cgImage
-    }
-}
-
-struct PixelWorldModifier: ViewModifier {
+struct MonochromeLookModifier: ViewModifier {
     let enabled: Bool
-    /// Actualiza o raster em loop (vídeo); imagem deve usar `false`.
-    var animates: Bool = true
-    /// Lado alvo de cada bloco em **pontos** (maior = menos pixels no raster = mais «blocos»).
-    var blockSize: CGFloat = 32
 
     func body(content: Content) -> some View {
         Group {
             if enabled {
-                GeometryReader { geo in
-                    let w = max(geo.size.width, 1)
-                    let h = max(geo.size.height, 1)
-                    CrispBlockPixelView(
-                        content: content,
-                        size: CGSize(width: w, height: h),
-                        blockSize: blockSize,
-                        animates: animates
-                    )
-                }
+                content
+                    .saturation(0)
+                    .contrast(1.12)
+                    .brightness(0.02)
             } else {
                 content
             }

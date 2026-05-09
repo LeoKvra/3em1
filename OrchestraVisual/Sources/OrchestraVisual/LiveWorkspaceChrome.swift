@@ -89,7 +89,6 @@ private struct LivePillThumbnail: View {
                     isPlaying: ch.isPlaying,
                     effectOn: ch.effectOn,
                     visualEffectMode: ch.visualEffectMode,
-                    animatePixelEffect: false,
                     onVideoSingleTap: nil,
                     onVideoDoubleTap: nil
                 )
@@ -270,7 +269,6 @@ struct GeneralLiveWorkspaceView: View {
                     isPlaying: channel.isPlaying,
                     effectOn: channel.effectOn,
                     visualEffectMode: channel.visualEffectMode,
-                    animatePixelEffect: false,
                     onVideoSingleTap: nil,
                     onVideoDoubleTap: nil
                 )
