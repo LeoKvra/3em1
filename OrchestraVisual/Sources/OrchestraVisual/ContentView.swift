@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var vm = OrchestratorViewModel()
-    @State private var libraryCollapsed = false
+    @State private var libraryCollapsed = true
 
     /// Largura fixa alta legibilidade ao vivo quando colapsado.
     private let libraryCollapsedRibbonWidth: CGFloat = 52

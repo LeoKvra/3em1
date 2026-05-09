@@ -2,6 +2,49 @@ import AppKit
 import AVFoundation
 import SwiftUI
 
+/// Área transparente sobre o vídeo: clique simples (com pequeno atraso) vs duplo clique.
+private final class VideoPreviewTapSurfaceView: NSView {
+    var onSingle: () -> Void = {}
+    var onDouble: () -> Void = {}
+    private var pendingSingle: DispatchWorkItem?
+
+    override func mouseDown(with event: NSEvent) {
+        let clicks = event.clickCount
+        if clicks >= 2 {
+            pendingSingle?.cancel()
+            pendingSingle = nil
+            if clicks == 2 {
+                onDouble()
+            }
+            return
+        }
+        pendingSingle?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            self?.onSingle()
+            self?.pendingSingle = nil
+        }
+        pendingSingle = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32, execute: work)
+    }
+}
+
+private struct VideoPreviewTapOverlay: NSViewRepresentable {
+    var onSingleClick: () -> Void
+    var onDoubleClick: () -> Void
+
+    func makeNSView(context: Context) -> VideoPreviewTapSurfaceView {
+        let v = VideoPreviewTapSurfaceView()
+        v.wantsLayer = true
+        v.layer?.backgroundColor = NSColor.clear.cgColor
+        return v
+    }
+
+    func updateNSView(_ nsView: VideoPreviewTapSurfaceView, context: Context) {
+        nsView.onSingle = onSingleClick
+        nsView.onDouble = onDoubleClick
+    }
+}
+
 final class PreviewPlayerContainerView: NSView {
     let playerLayer = AVPlayerLayer()
 
@@ -49,6 +92,25 @@ struct ChannelPreviewContent: View {
     let player: AVPlayer?
     let isPlaying: Bool
     let effectOn: Bool
+    /// Só vídeo: clique alterna pausa/reprodução; duplo clique volta ao início.
+    var onVideoSingleTap: (() -> Void)?
+    var onVideoDoubleTap: (() -> Void)?
+
+    init(
+        url: URL?,
+        player: AVPlayer?,
+        isPlaying: Bool,
+        effectOn: Bool,
+        onVideoSingleTap: (() -> Void)? = nil,
+        onVideoDoubleTap: (() -> Void)? = nil
+    ) {
+        self.url = url
+        self.player = player
+        self.isPlaying = isPlaying
+        self.effectOn = effectOn
+        self.onVideoSingleTap = onVideoSingleTap
+        self.onVideoDoubleTap = onVideoDoubleTap
+    }
 
     var body: some View {
         ZStack {
@@ -129,6 +191,8 @@ struct ChannelPreviewContent: View {
                     AVPlayerPreview(player: player)
                 }
             }
+            .allowsHitTesting(false)
+
             if !isPlaying {
                 Text("PAUSA / PARADO")
                     .font(.title2.weight(.heavy))
@@ -136,9 +200,14 @@ struct ChannelPreviewContent: View {
                     .padding(10)
                     .background(Color.black.opacity(0.55))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .allowsHitTesting(false)
+            }
+
+            if let single = onVideoSingleTap, let double = onVideoDoubleTap {
+                VideoPreviewTapOverlay(onSingleClick: single, onDoubleClick: double)
+                    .help("Clique: pausa ou continua · duplo clique: volta ao início e fica em pausa")
             }
         }
-        .allowsHitTesting(false)
     }
 
     private func placeholder(_ text: String) -> some View {

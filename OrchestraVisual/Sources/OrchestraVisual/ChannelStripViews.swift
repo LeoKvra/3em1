@@ -20,7 +20,19 @@ struct ChannelStripView: View {
                 url: channel.assignedURL,
                 player: vm.player(for: channel.id),
                 isPlaying: channel.isPlaying,
-                effectOn: channel.effectOn
+                effectOn: channel.effectOn,
+                onVideoSingleTap: isAssignedVideo
+                    ? {
+                        if channel.isPlaying {
+                            vm.pause(channelId: channel.id)
+                        } else {
+                            vm.start(channelId: channel.id)
+                        }
+                    }
+                    : nil,
+                onVideoDoubleTap: isAssignedVideo
+                    ? { vm.restartFromBeginning(channelId: channel.id) }
+                    : nil
             )
             .frame(minHeight: 220)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
