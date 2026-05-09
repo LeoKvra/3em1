@@ -55,6 +55,8 @@ struct ChannelState: Identifiable, Equatable {
     var effectOn: Bool
     /// Áudio embutido no vídeo (independente do leitor da barra inferior). Por defeito começa mutado.
     var videoAudioMuted: Bool
+    /// Efeito visual da live (pixel / falha); independente do botão «Efeito» (alto contraste).
+    var visualEffectMode: LiveVisualEffectMode = .none
 }
 
 @MainActor
@@ -110,7 +112,8 @@ final class OrchestratorViewModel: ObservableObject {
             assignedURL: nil,
             isPlaying: false,
             effectOn: false,
-            videoAudioMuted: true
+            videoAudioMuted: true,
+            visualEffectMode: .none
         )
 
         let slot = LiveSlot(
@@ -324,6 +327,10 @@ final class OrchestratorViewModel: ObservableObject {
         updateChannel(channelId) { $0.effectOn.toggle() }
     }
 
+    func setVisualEffectMode(channelId: Int, mode: LiveVisualEffectMode) {
+        updateChannel(channelId) { $0.visualEffectMode = mode }
+    }
+
     func toggleVideoAudioMute(channelId: Int) {
         guard let url = channels.first(where: { $0.id == channelId })?.assignedURL,
               MediaKind.of(url: url) == .video else { return }
@@ -346,6 +353,7 @@ final class OrchestratorViewModel: ObservableObject {
             ch.assignedURL = nil
             ch.effectOn = false
             ch.videoAudioMuted = true
+            ch.visualEffectMode = .none
         }
     }
 

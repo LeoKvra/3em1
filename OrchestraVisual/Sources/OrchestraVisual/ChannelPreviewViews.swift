@@ -92,6 +92,7 @@ struct ChannelPreviewContent: View {
     let player: AVPlayer?
     let isPlaying: Bool
     let effectOn: Bool
+    var visualEffectMode: LiveVisualEffectMode
     /// Só vídeo: clique alterna pausa/reprodução; duplo clique volta ao início.
     var onVideoSingleTap: (() -> Void)?
     var onVideoDoubleTap: (() -> Void)?
@@ -101,6 +102,7 @@ struct ChannelPreviewContent: View {
         player: AVPlayer?,
         isPlaying: Bool,
         effectOn: Bool,
+        visualEffectMode: LiveVisualEffectMode = .none,
         onVideoSingleTap: (() -> Void)? = nil,
         onVideoDoubleTap: (() -> Void)? = nil
     ) {
@@ -108,6 +110,7 @@ struct ChannelPreviewContent: View {
         self.player = player
         self.isPlaying = isPlaying
         self.effectOn = effectOn
+        self.visualEffectMode = visualEffectMode
         self.onVideoSingleTap = onVideoSingleTap
         self.onVideoDoubleTap = onVideoDoubleTap
     }
@@ -119,7 +122,12 @@ struct ChannelPreviewContent: View {
             } else if let url, MediaKind.of(url: url) == .video {
                 videoBranch()
             } else {
-                placeholder("Nenhuma mídia\nAtribuir da biblioteca")
+                ZStack {
+                    placeholder("Nenhuma mídia\nAtribuir da biblioteca")
+                    if visualEffectMode == .randomGlitch {
+                        AnalogGlitchOverlay()
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -144,6 +152,7 @@ struct ChannelPreviewContent: View {
                             .aspectRatio(contentMode: .fit)
                     }
                 }
+                .modifier(PixelWorldModifier(enabled: visualEffectMode == .pixelWorld))
             } else {
                 placeholder("Não consegui ler a imagem\n(tenta exportar doutro formato)")
             }
@@ -176,6 +185,11 @@ struct ChannelPreviewContent: View {
                 )
                 .padding(10)
         }
+        .overlay {
+            if visualEffectMode == .randomGlitch {
+                AnalogGlitchOverlay()
+            }
+        }
     }
 
     @ViewBuilder
@@ -191,6 +205,7 @@ struct ChannelPreviewContent: View {
                     AVPlayerPreview(player: player)
                 }
             }
+            .modifier(PixelWorldModifier(enabled: visualEffectMode == .pixelWorld))
             .allowsHitTesting(false)
 
             if !isPlaying {
@@ -206,6 +221,10 @@ struct ChannelPreviewContent: View {
             if let single = onVideoSingleTap, let double = onVideoDoubleTap {
                 VideoPreviewTapOverlay(onSingleClick: single, onDoubleClick: double)
                     .help("Clique: pausa ou continua · duplo clique: volta ao início e fica em pausa")
+            }
+
+            if visualEffectMode == .randomGlitch {
+                AnalogGlitchOverlay()
             }
         }
     }

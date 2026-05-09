@@ -20,6 +20,31 @@ struct ChannelStripView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(LiveTheme.textSecondary)
 
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Look da live")
+                    .font(.subheadline.weight(.heavy))
+                    .foregroundStyle(LiveTheme.textPrimary)
+                Text("Escolhe como o preview desta saída é mostrado (independente do botão «Alto contraste»).")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(LiveTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Picker("Look da live", selection: Binding(
+                    get: { channel.visualEffectMode },
+                    set: { vm.setVisualEffectMode(channelId: channel.id, mode: $0) }
+                )) {
+                    ForEach(LiveVisualEffectMode.allCases) { mode in
+                        Text(mode.segmentLabel)
+                            .tag(mode)
+                            .help(mode.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("Look da live")
+                .accessibilityHint("Sem efeito, mundo pixel ou falha aleatória.")
+            }
+
             HStack {
                 Spacer(minLength: 0)
                 LiveProjectionPreviewFrame(
@@ -30,6 +55,7 @@ struct ChannelStripView: View {
                         player: vm.player(for: channel.id),
                         isPlaying: channel.isPlaying,
                         effectOn: channel.effectOn,
+                        visualEffectMode: channel.visualEffectMode,
                         onVideoSingleTap: isAssignedVideo
                             ? {
                                 if channel.isPlaying {
@@ -78,10 +104,11 @@ struct ChannelStripView: View {
                 .disabled(!hasAssignedMedia || !isAssignedVideo)
                 .help("Salta para o início do vídeo e fica em pausa até carregar em Reproduzir.")
 
-                Button("Efeito") {
+                Button("Alto contraste") {
                     vm.toggleEffect(channelId: channel.id)
                 }
                 .buttonStyle(LiveToggleButtonStyle(isOn: channel.effectOn))
+                .help("Filtro forte no vídeo/imagem — não confundir com «Look da live» acima.")
 
                 Button("Som original") {
                     vm.toggleVideoAudioMute(channelId: channel.id)

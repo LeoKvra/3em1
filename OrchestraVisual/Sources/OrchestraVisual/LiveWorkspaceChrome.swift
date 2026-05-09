@@ -88,6 +88,7 @@ private struct LivePillThumbnail: View {
                     player: vm.player(for: ch.id),
                     isPlaying: ch.isPlaying,
                     effectOn: ch.effectOn,
+                    visualEffectMode: ch.visualEffectMode,
                     onVideoSingleTap: nil,
                     onVideoDoubleTap: nil
                 )
