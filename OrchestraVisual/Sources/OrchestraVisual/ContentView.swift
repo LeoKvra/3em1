@@ -4,14 +4,29 @@ struct ContentView: View {
     @StateObject private var vm = OrchestratorViewModel()
     @State private var libraryCollapsed = true
 
+    // MARK: - Fase 1 · Lives + abas Live / Lab
+
+    @State private var liveSlots: [LiveSlot] = LiveSlot.phase1Initial
+    @State private var selectedLiveSlotId: UUID = LiveSlot.defaultSelectionId
+    @State private var workspaceTab: WorkspaceMainTab = .live
+
     /// Largura fixa alta legibilidade ao vivo quando colapsado.
     private let libraryCollapsedRibbonWidth: CGFloat = 52
+
+    private var selectedLiveSlot: LiveSlot? {
+        liveSlots.first { $0.id == selectedLiveSlotId }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
                 .background(LiveTheme.border.opacity(0.35))
+
+            LiveSlotPickerBar(slots: $liveSlots, selectedId: $selectedLiveSlotId)
+
+            Divider()
+                .background(LiveTheme.border.opacity(0.28))
 
             HStack(alignment: .top, spacing: 0) {
                 if libraryCollapsed {
@@ -27,16 +42,8 @@ struct ContentView: View {
                         .frame(width: 2)
                 }
 
-                ScrollView {
-                    VStack(spacing: 18) {
-                        ForEach(vm.channels) { ch in
-                            ChannelStripView(vm: vm, channel: ch)
-                                .id(ch.id)
-                        }
-                    }
-                    .padding(16)
-                }
-                .frame(minWidth: 480)
+                mainWorkspaceColumn
+                    .frame(minWidth: 480)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .animation(.easeInOut(duration: 0.22), value: libraryCollapsed)
@@ -47,10 +54,62 @@ struct ContentView: View {
             AudioControlView(vm: vm)
                 .padding(16)
         }
-        .frame(minWidth: 840, minHeight: 640)
+        .frame(minWidth: 960, minHeight: 640)
         .background(LiveTheme.background)
         .task {
             await vm.bootstrapStarterLibraryIfNeeded()
+        }
+        .onChange(of: liveSlots.map(\.id)) { _, _ in
+            if !liveSlots.contains(where: { $0.id == selectedLiveSlotId }) {
+                selectedLiveSlotId = liveSlots.first?.id ?? selectedLiveSlotId
+            }
+        }
+    }
+
+    // MARK: - Zona principal (Live | Lab)
+
+    private var mainWorkspaceColumn: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Picker(selection: $workspaceTab) {
+                ForEach(WorkspaceMainTab.allCases, id: \.self) { tab in
+                    Text(tab.rawValue).tag(tab)
+                }
+            } label: {
+                EmptyView()
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
+
+            ScrollView {
+                Group {
+                    if let slot = selectedLiveSlot {
+                        switch workspaceTab {
+                        case .live:
+                            liveTabBody(for: slot)
+                        case .lab:
+                            LabTabPlaceholder(liveTitle: slot.title)
+                        }
+                    }
+                }
+                .padding(16)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private func liveTabBody(for slot: LiveSlot) -> some View {
+        if slot.isGeneral {
+            GeneralLivePlaceholder()
+        } else if let cid = slot.mappedChannelId,
+                  let channel = vm.channels.first(where: { $0.id == cid }) {
+            ChannelStripView(vm: vm, channel: channel)
+                .id(channel.id)
+        } else {
+            UnassignedProgramLivePlaceholder(title: slot.title)
         }
     }
 
@@ -97,7 +156,7 @@ struct ContentView: View {
                 Text("Orquestra visual · painel ao vivo")
                     .font(.title.weight(.heavy))
                     .foregroundStyle(LiveTheme.textPrimary)
-                Text("Duas saídas · demos visuais + biblioteca própria · áudio · efeitos por canal")
+                Text("Fase 1 · lives no topo · abas Live/Lab · até \(LiveSlot.maxProgramLives) lives de programa · biblioteca à esquerda")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(LiveTheme.textSecondary)
             }
