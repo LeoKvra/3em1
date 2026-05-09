@@ -18,12 +18,79 @@ enum LiveVisualEffectMode: String, CaseIterable, Identifiable, Equatable {
     }
 }
 
-// MARK: - Mundo pixel (subamostragem encaixada)
+// MARK: - Mundo pixel (estilo Minecraft — raster baixo + upscale nearest-neighbour)
+
+/// Rasteriza a vista a poucos pixels de largura (`ImageRenderer`) e estica com `interpolation(.none)` —
+/// na retina, `scaleEffect` sozinho continua suave; assim os quadrados ficam mesmo «blocos».
+private struct CrispBlockPixelView<Content: View>: View {
+    @Environment(\.displayScale) private var displayScale
+
+    let content: Content
+    let size: CGSize
+    let blockSize: CGFloat
+    /// `true` para vídeo (actualiza ~20×/s); `false` para imagem estática (só quando muda o layout).
+    let animates: Bool
+
+    @State private var bitmap: CGImage?
+
+    private var layoutKey: String {
+        "\(Int(size.width))×\(Int(size.height))×\(Int(blockSize * 10))"
+    }
+
+    var body: some View {
+        Group {
+            if animates {
+                TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: false)) { ctx in
+                    pixelSurface
+                        .task(id: ctx.date.timeIntervalSinceReferenceDate) {
+                            rasterize()
+                        }
+                }
+            } else {
+                pixelSurface
+                    .task(id: layoutKey) {
+                        rasterize()
+                    }
+            }
+        }
+    }
+
+    private var pixelSurface: some View {
+        Group {
+            if let bitmap {
+                Image(decorative: bitmap, scale: 1)
+                    .interpolation(.none)
+                    .resizable()
+                    .frame(width: size.width, height: size.height)
+            } else {
+                Color.black.opacity(0.94)
+                    .frame(width: size.width, height: size.height)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .clipped()
+        .onAppear {
+            rasterize()
+        }
+    }
+
+    @MainActor
+    private func rasterize() {
+        let bs = max(6, blockSize)
+        let renderer = ImageRenderer(content: content.frame(width: size.width, height: size.height))
+        renderer.proposedSize = ProposedViewSize(width: size.width, height: size.height)
+        // Pixels ≈ pontos × scale = pontos × (displayScale/bs) → ~1 bloco de bs pt por cada célula no raster.
+        renderer.scale = displayScale / bs
+        bitmap = renderer.cgImage
+    }
+}
 
 struct PixelWorldModifier: ViewModifier {
     let enabled: Bool
-    /// Tamanho do «bloco» em pixels lógicos (maior = mais blocos).
-    var blockSize: CGFloat = 8
+    /// Actualiza o raster em loop (vídeo); imagem deve usar `false`.
+    var animates: Bool = true
+    /// Lado alvo de cada bloco em **pontos** (maior = menos pixels no raster = mais «blocos»).
+    var blockSize: CGFloat = 32
 
     func body(content: Content) -> some View {
         Group {
@@ -31,14 +98,12 @@ struct PixelWorldModifier: ViewModifier {
                 GeometryReader { geo in
                     let w = max(geo.size.width, 1)
                     let h = max(geo.size.height, 1)
-                    let s = blockSize
-                    content
-                        .frame(width: w, height: h)
-                        .scaleEffect(1 / s, anchor: .center)
-                        .frame(width: w / s, height: h / s)
-                        .scaleEffect(s, anchor: .center)
-                        .frame(width: w, height: h)
-                        .clipped()
+                    CrispBlockPixelView(
+                        content: content,
+                        size: CGSize(width: w, height: h),
+                        blockSize: blockSize,
+                        animates: animates
+                    )
                 }
             } else {
                 content
