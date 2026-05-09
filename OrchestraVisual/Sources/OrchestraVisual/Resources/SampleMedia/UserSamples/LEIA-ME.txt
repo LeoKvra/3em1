@@ -1,0 +1,8 @@
+Estes dois ficheiros são a biblioteca inicial da app (nomes fixos no código):
+
+  amostra_demo_curta_480p_30s.mov
+  amostra_surfe_720p_3min.mov
+
+Substitui por outros .mov com os mesmos nomes, ou altera a lista em SampleMediaProvisioner.swift.
+
+Recompila depois de mudar ficheiros (por exemplo: swift run OrchestraVisual).

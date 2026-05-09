@@ -43,7 +43,7 @@ struct MediaLibraryView: View {
             }
             .padding(.bottom, 10)
 
-            Text("Inclui Jamaica (verde·ouro·preto em rotação), vídeos sólidos magenta/ciano e três PNG · 848×480 múltiplo de 16 (H.264) · áudio abaixo.")
+            Text("Duas amostras em vídeo (demo curta 480p e surfe 720p). Use o botão amarelo para acrescentar mais ficheiros · áudio abaixo.")
                 .font(.callout.weight(.medium))
                 .foregroundStyle(LiveTheme.textSecondary)
                 .padding(.bottom, 14)

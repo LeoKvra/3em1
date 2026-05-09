@@ -35,3 +35,7 @@ swift build -c release
 ```
 
 O executável fica em `.build/release/OrchestraVisual`; você pode rodá-lo diretamente a partir daí.
+
+## Amostras de vídeo iniciais
+
+A biblioteca ao arranque usa só dois vídeos em `Sources/OrchestraVisual/Resources/SampleMedia/UserSamples/` (nomes fixos; vê `LEIA-ME.txt` nessa pasta). Para mais ficheiros no painel, usa **Adicionar vídeos / imagens…** na app.

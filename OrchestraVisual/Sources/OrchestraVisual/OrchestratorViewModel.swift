@@ -76,8 +76,8 @@ final class OrchestratorViewModel: ObservableObject {
 
     // MARK: - Arranque (amostras + previews)
 
-    /// Carrega imagens incluídas no pacote, gera dois `.mov` de teste e preenche a biblioteca quando vazia.
-    /// Atribui vídeo distinto por saída e inicia reprodução nos dois previews (decodificadores em paralelo).
+    /// Carrega os dois vídeos de amostra (`UserSamples`) e preenche a biblioteca quando vazia.
+    /// Atribui um vídeo por saída e inicia reprodução nos dois previews (decodificadores em paralelo).
     func bootstrapStarterLibraryIfNeeded() async {
         guard library.isEmpty else { return }
 
@@ -99,25 +99,12 @@ final class OrchestratorViewModel: ObservableObject {
         selection = items.first?.id
     }
 
-    /// Define mídia inicial nas duas saídas: dois vídeos diferentes se existirem; caso só existam imagens, duplica só imagem.
+    /// Define mídia inicial nas duas saídas: primeiro vídeo na saída 1, segundo na saída 2 (ou duplica se só houver um).
     private func wireStarterAssignments(from items: [LibraryItem]) {
         let videos = items.filter { MediaKind.of(url: $0.url) == .video }
         if !videos.isEmpty {
-            let jam = videos.first { $0.url.lastPathComponent.localizedStandardContains("jamaica") }
-
-            let urlA: URL
-            let urlB: URL
-            if let jam, let other = videos.first(where: { $0.url != jam.url }) {
-                urlA = jam.url
-                urlB = other.url
-            } else if let jam {
-                urlA = jam.url
-                urlB = jam.url
-            } else {
-                urlA = videos[0].url
-                urlB = (videos.count > 1 ? videos[1] : videos[0]).url
-            }
-
+            let urlA = videos[0].url
+            let urlB = videos.count > 1 ? videos[1].url : videos[0].url
             assignMedia(urlA, to: 0)
             assignMedia(urlB, to: 1)
             start(channelId: 0)
