@@ -26,10 +26,15 @@ struct LiveSlotPickerBar: View {
                         Button {
                             selectedId = slot.id
                         } label: {
-                            Text(slot.title)
+                            HStack(spacing: 8) {
+                                LivePillThumbnail(slot: slot, vm: vm)
+                                Text(slot.title)
+                                    .font(.subheadline.weight(.heavy))
+                                    .lineLimit(1)
+                            }
                         }
                         .buttonStyle(LivePillButtonStyle(isSelected: slot.id == selectedId))
-                        .help(slot.isGeneral ? "Overview / master — conteúdo nas fases seguintes" : "Saída de programa \(slot.title)")
+                        .help(slot.isGeneral ? "Overview / master — conteúdo nas fases seguintes" : "Pré-visualização desta saída · \(slot.title)")
                     }
 
                     Button {
@@ -60,14 +65,71 @@ struct LiveSlotPickerBar: View {
     }
 }
 
+/// Miniatura do que está na saída (ou ícone para «Geral»); cliques ficam no botão da pill.
+private struct LivePillThumbnail: View {
+    let slot: LiveSlot
+    @ObservedObject var vm: OrchestratorViewModel
+
+    private var channel: ChannelState? {
+        guard let cid = slot.mappedChannelId else { return nil }
+        return vm.channels.first(where: { $0.id == cid })
+    }
+
+    private let thumbW: CGFloat = 52
+    private let thumbH: CGFloat = 34
+
+    var body: some View {
+        Group {
+            if slot.isGeneral {
+                generalThumb
+            } else if let ch = channel {
+                ChannelPreviewContent(
+                    url: ch.assignedURL,
+                    player: vm.player(for: ch.id),
+                    isPlaying: ch.isPlaying,
+                    effectOn: ch.effectOn,
+                    onVideoSingleTap: nil,
+                    onVideoDoubleTap: nil
+                )
+                .frame(width: thumbW, height: thumbH)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            } else {
+                ZStack {
+                    Color.black.opacity(0.88)
+                    Image(systemName: "tv")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(LiveTheme.textSecondary.opacity(0.85))
+                }
+                .frame(width: thumbW, height: thumbH)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+        )
+        .allowsHitTesting(false)
+    }
+
+    private var generalThumb: some View {
+        ZStack {
+            Color.black.opacity(0.92)
+            Image(systemName: "square.grid.3x3.square.fill")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(LiveTheme.border.opacity(0.9))
+        }
+        .frame(width: thumbW, height: thumbH)
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+}
+
 struct LivePillButtonStyle: ButtonStyle {
     var isSelected: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(.heavy))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
             .foregroundStyle(isSelected ? Color.black.opacity(0.92) : LiveTheme.textPrimary)
             .background(
                 configuration.isPressed
