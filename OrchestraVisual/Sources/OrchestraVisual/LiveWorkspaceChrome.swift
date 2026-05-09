@@ -203,11 +203,14 @@ struct GeneralLiveWorkspaceView: View {
                             .padding(10)
                     }
                 }
+                .frame(minWidth: 0)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 MasterIlluminatorOverlay(preset: vm.masterIlluminator)
             }
             .aspectRatio(LiveCanvasMetrics.aspectRatio, contentMode: .fit)
             .frame(maxWidth: .infinity)
+            .frame(minWidth: 0)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -218,37 +221,42 @@ struct GeneralLiveWorkspaceView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(LiveTheme.textSecondary)
         }
+        .frame(maxWidth: .infinity)
+        .frame(minWidth: 0)
     }
 
     private var mosaicGrid: some View {
-        GeometryReader { geo in
-            let spacing: CGFloat = 8
-            let slots = programSlots
-            Group {
-                switch slots.count {
-                case 1:
-                    if let slot = slots.first {
+        let spacing: CGFloat = 8
+        let slots = programSlots
+        return Group {
+            switch slots.count {
+            case 1:
+                if let slot = slots.first {
+                    mosaicCell(for: slot)
+                        .frame(minWidth: 0)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            case 2:
+                HStack(spacing: spacing) {
+                    ForEach(slots) { slot in
                         mosaicCell(for: slot)
-                            .frame(width: geo.size.width, height: geo.size.height)
+                            .frame(minWidth: 0)
+                            .frame(maxWidth: .infinity)
+                            .frame(maxHeight: .infinity)
                     }
-                case 2:
-                    HStack(spacing: spacing) {
-                        ForEach(slots) { slot in
-                            mosaicCell(for: slot)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                    }
-                default:
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: spacing),
-                            GridItem(.flexible(), spacing: spacing)
-                        ],
-                        spacing: spacing
-                    ) {
-                        ForEach(slots) { slot in
-                            mosaicCell(for: slot)
-                        }
+                }
+                .frame(minWidth: 0)
+            default:
+                LazyVGrid(
+                    columns: [
+                        GridItem(.flexible(minimum: 0), spacing: spacing),
+                        GridItem(.flexible(minimum: 0), spacing: spacing)
+                    ],
+                    spacing: spacing
+                ) {
+                    ForEach(slots) { slot in
+                        mosaicCell(for: slot)
+                            .frame(minWidth: 0)
                     }
                 }
             }
@@ -273,8 +281,12 @@ struct GeneralLiveWorkspaceView: View {
                     onVideoDoubleTap: nil
                 )
                 .aspectRatio(LiveCanvasMetrics.aspectRatio, contentMode: .fit)
+                .frame(minWidth: 0)
+                .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
+            .frame(minWidth: 0)
+            .frame(maxWidth: .infinity)
         }
     }
 }
