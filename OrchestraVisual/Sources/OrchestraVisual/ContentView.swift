@@ -4,9 +4,8 @@ struct ContentView: View {
     @StateObject private var vm = OrchestratorViewModel()
     @State private var libraryCollapsed = true
 
-    // MARK: - Fase 1 · Lives + abas Live / Lab
+    // MARK: - Lives + abas Live / Lab (slots no ViewModel — Fase 2)
 
-    @State private var liveSlots: [LiveSlot] = LiveSlot.phase1Initial
     @State private var selectedLiveSlotId: UUID = LiveSlot.defaultSelectionId
     @State private var workspaceTab: WorkspaceMainTab = .live
 
@@ -14,7 +13,7 @@ struct ContentView: View {
     private let libraryCollapsedRibbonWidth: CGFloat = 52
 
     private var selectedLiveSlot: LiveSlot? {
-        liveSlots.first { $0.id == selectedLiveSlotId }
+        vm.liveSlots.first { $0.id == selectedLiveSlotId }
     }
 
     var body: some View {
@@ -23,7 +22,7 @@ struct ContentView: View {
             Divider()
                 .background(LiveTheme.border.opacity(0.35))
 
-            LiveSlotPickerBar(slots: $liveSlots, selectedId: $selectedLiveSlotId)
+            LiveSlotPickerBar(vm: vm, selectedId: $selectedLiveSlotId)
 
             Divider()
                 .background(LiveTheme.border.opacity(0.28))
@@ -59,9 +58,9 @@ struct ContentView: View {
         .task {
             await vm.bootstrapStarterLibraryIfNeeded()
         }
-        .onChange(of: liveSlots.map(\.id)) { _, _ in
-            if !liveSlots.contains(where: { $0.id == selectedLiveSlotId }) {
-                selectedLiveSlotId = liveSlots.first?.id ?? selectedLiveSlotId
+        .onChange(of: vm.liveSlots.map(\.id)) { _, _ in
+            if !vm.liveSlots.contains(where: { $0.id == selectedLiveSlotId }) {
+                selectedLiveSlotId = vm.liveSlots.first?.id ?? selectedLiveSlotId
             }
         }
     }
@@ -156,7 +155,7 @@ struct ContentView: View {
                 Text("Orquestra visual · painel ao vivo")
                     .font(.title.weight(.heavy))
                     .foregroundStyle(LiveTheme.textPrimary)
-                Text("Fase 1 · lives no topo · abas Live/Lab · até \(LiveSlot.maxProgramLives) lives de programa · biblioteca à esquerda")
+                Text("Fase 2 · lives/canais dinâmicos · abas Live/Lab · até \(LiveSlot.maxProgramLives) lives de programa · biblioteca à esquerda")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(LiveTheme.textSecondary)
             }

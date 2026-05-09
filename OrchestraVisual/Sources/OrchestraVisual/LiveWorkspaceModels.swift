@@ -1,6 +1,6 @@
 import Foundation
 
-/// Separador principal da zona de trabalho (Fase 1).
+/// Separador principal da zona de trabalho.
 enum WorkspaceMainTab: String, CaseIterable {
     case live = "Live"
     case lab = "Lab"
@@ -11,7 +11,7 @@ struct LiveSlot: Identifiable, Equatable {
     let id: UUID
     var title: String
     var isGeneral: Bool
-    /// Mapa para `ChannelState.id` existente; `nil` = placeholder até Fase 2+.
+    /// Mapa para `OrchestratorViewModel.channels[].id` (`nil` só em «Geral»).
     var mappedChannelId: Int?
 
     /// Máximo de lives de programa (exclui «Geral»).

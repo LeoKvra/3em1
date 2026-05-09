@@ -60,12 +60,11 @@ struct ChannelState: Identifiable, Equatable {
 @MainActor
 final class OrchestratorViewModel: ObservableObject {
 
-    private static let defaultChannels = [
-        ChannelState(id: 0, title: "Saída 1 · Fundo widescreen", assignedURL: nil, isPlaying: false, effectOn: false, videoAudioMuted: true),
-        ChannelState(id: 1, title: "Saída 2 · Pano / músico", assignedURL: nil, isPlaying: false, effectOn: false, videoAudioMuted: true),
-    ]
+    /// Saídas de vídeo (uma por live de programa; cresce com «+ Live», até `LiveSlot.maxProgramLives`).
+    @Published private(set) var channels: [ChannelState] = OrchestratorViewModel.makeInitialChannels()
 
-    @Published private(set) var channels: [ChannelState] = defaultChannels
+    /// Pills no topo (Geral + Live 1…n); cada live de programa referencia `channels` por `mappedChannelId`.
+    @Published private(set) var liveSlots: [LiveSlot] = LiveSlot.phase1Initial
     @Published private(set) var library: [LibraryItem] = []
     @Published var selection: UUID?
     @Published private(set) var audioURL: URL?
@@ -81,6 +80,50 @@ final class OrchestratorViewModel: ObservableObject {
     private var playbackTimeObservers: [Int: Any] = [:]
     /// Evita que o temporizador sobrescreva o slider durante o arrastar.
     private var scrubbingChannels: Set<Int> = []
+
+    private static func makeInitialChannels() -> [ChannelState] {
+        [
+            ChannelState(id: 0, title: "Saída 1 · Fundo widescreen", assignedURL: nil, isPlaying: false, effectOn: false, videoAudioMuted: true),
+            ChannelState(id: 1, title: "Saída 2 · Pano / músico", assignedURL: nil, isPlaying: false, effectOn: false, videoAudioMuted: true),
+        ]
+    }
+
+    /// Adiciona um canal de programa e o pill correspondente (Live 3 / 4…).
+    @discardableResult
+    func addProgramLiveSlot() -> UUID? {
+        let programCount = liveSlots.filter { !$0.isGeneral }.count
+        guard programCount < LiveSlot.maxProgramLives else { return nil }
+
+        let nextChannelId = (channels.map(\.id).max() ?? -1) + 1
+        let ordinal = channels.count
+
+        let channelTitle: String
+        switch ordinal {
+        case 0: channelTitle = "Saída 1 · Fundo widescreen"
+        case 1: channelTitle = "Saída 2 · Pano / músico"
+        default: channelTitle = "Saída \(ordinal + 1) · programa"
+        }
+
+        let newChannel = ChannelState(
+            id: nextChannelId,
+            title: channelTitle,
+            assignedURL: nil,
+            isPlaying: false,
+            effectOn: false,
+            videoAudioMuted: true
+        )
+
+        let slot = LiveSlot(
+            id: UUID(),
+            title: "Live \(programCount + 1)",
+            isGeneral: false,
+            mappedChannelId: nextChannelId
+        )
+
+        channels.append(newChannel)
+        liveSlots.append(slot)
+        return slot.id
+    }
 
     // MARK: - Arranque (amostras + previews)
 

@@ -3,11 +3,11 @@ import SwiftUI
 // MARK: - Barra de pills
 
 struct LiveSlotPickerBar: View {
-    @Binding var slots: [LiveSlot]
+    @ObservedObject var vm: OrchestratorViewModel
     @Binding var selectedId: UUID
 
     private var programCount: Int {
-        slots.filter { !$0.isGeneral }.count
+        vm.liveSlots.filter { !$0.isGeneral }.count
     }
 
     private var canAddLive: Bool {
@@ -22,7 +22,7 @@ struct LiveSlotPickerBar: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    ForEach(slots) { slot in
+                    ForEach(vm.liveSlots) { slot in
                         Button {
                             selectedId = slot.id
                         } label: {
@@ -33,7 +33,9 @@ struct LiveSlotPickerBar: View {
                     }
 
                     Button {
-                        addProgramLive()
+                        if let id = vm.addProgramLiveSlot() {
+                            selectedId = id
+                        }
                     } label: {
                         Label("+ Live", systemImage: "plus.circle.fill")
                             .labelStyle(.titleAndIcon)
@@ -55,19 +57,6 @@ struct LiveSlotPickerBar: View {
                 .foregroundStyle(LiveTheme.border.opacity(0.35)),
             alignment: .bottom
         )
-    }
-
-    private func addProgramLive() {
-        guard canAddLive else { return }
-        let nextNum = programCount + 1
-        let slot = LiveSlot(
-            id: UUID(),
-            title: "Live \(nextNum)",
-            isGeneral: false,
-            mappedChannelId: nil
-        )
-        slots.append(slot)
-        selectedId = slot.id
     }
 }
 
