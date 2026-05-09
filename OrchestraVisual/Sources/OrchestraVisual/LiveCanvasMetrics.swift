@@ -9,4 +9,7 @@ enum LiveCanvasMetrics {
     static var aspectRatio: CGFloat { referenceWidth / referenceHeight }
 
     static let displayLabel = "1920 × 1080"
+
+    /// Largura máxima do preview no painel (o canvas lógico mantém-se Full HD).
+    static let previewPanelMaxWidth: CGFloat = 520
 }

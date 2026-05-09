@@ -16,32 +16,40 @@ struct ChannelStripView: View {
                 playbackBadge
             }
 
-            Text("Canvas programa · \(LiveCanvasMetrics.displayLabel)")
+            Text("Canvas programa · \(LiveCanvasMetrics.displayLabel) · pré-visualização à escala reduzida")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(LiveTheme.textSecondary)
 
-            ChannelPreviewContent(
-                url: channel.assignedURL,
-                player: vm.player(for: channel.id),
-                isPlaying: channel.isPlaying,
-                effectOn: channel.effectOn,
-                onVideoSingleTap: isAssignedVideo
-                    ? {
-                        if channel.isPlaying {
-                            vm.pause(channelId: channel.id)
-                        } else {
-                            vm.start(channelId: channel.id)
-                        }
-                    }
-                    : nil,
-                onVideoDoubleTap: isAssignedVideo
-                    ? { vm.restartFromBeginning(channelId: channel.id) }
-                    : nil
-            )
-            .aspectRatio(LiveCanvasMetrics.aspectRatio, contentMode: .fit)
+            HStack {
+                Spacer(minLength: 0)
+                LiveProjectionPreviewFrame(
+                    focused: channel.isPlaying && channel.assignedURL != nil
+                ) {
+                    ChannelPreviewContent(
+                        url: channel.assignedURL,
+                        player: vm.player(for: channel.id),
+                        isPlaying: channel.isPlaying,
+                        effectOn: channel.effectOn,
+                        onVideoSingleTap: isAssignedVideo
+                            ? {
+                                if channel.isPlaying {
+                                    vm.pause(channelId: channel.id)
+                                } else {
+                                    vm.start(channelId: channel.id)
+                                }
+                            }
+                            : nil,
+                        onVideoDoubleTap: isAssignedVideo
+                            ? { vm.restartFromBeginning(channelId: channel.id) }
+                            : nil
+                    )
+                    .aspectRatio(LiveCanvasMetrics.aspectRatio, contentMode: .fit)
+                    .frame(maxWidth: LiveCanvasMetrics.previewPanelMaxWidth)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                Spacer(minLength: 0)
+            }
             .frame(maxWidth: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .liveOutline(focused: channel.isPlaying && channel.assignedURL != nil)
 
             if isAssignedVideo {
                 ChannelVideoProgressRow(vm: vm, channelId: channel.id)
@@ -152,5 +160,36 @@ struct ChannelStripView: View {
     private var isAssignedVideo: Bool {
         guard let u = channel.assignedURL else { return false }
         return MediaKind.of(url: u) == .video
+    }
+}
+
+// MARK: - Moldura de projeção (preview à escala reduzida)
+
+/// Bezel em torno do vídeo para ler como «janela de projeção»; o canvas lógico continua Full HD.
+private struct LiveProjectionPreviewFrame<Content: View>: View {
+    let focused: Bool
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("Projeção")
+                .font(.caption2.weight(.heavy))
+                .foregroundStyle(LiveTheme.border.opacity(0.9))
+                .textCase(.uppercase)
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color(red: 0.02, green: 0.02, blue: 0.055))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(LiveTheme.border.opacity(0.42), lineWidth: 2)
+                    )
+                    .shadow(color: .black.opacity(0.45), radius: 6, x: 0, y: 3)
+
+                content()
+                    .padding(14)
+            }
+            .liveOutline(focused: focused)
+        }
     }
 }
