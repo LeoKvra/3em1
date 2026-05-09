@@ -40,6 +40,7 @@ struct ChannelStripView: View {
 
             if isAssignedVideo {
                 ChannelVideoProgressRow(vm: vm, channelId: channel.id)
+                    .id("playback-\(channel.id)")
             }
 
             HStack(spacing: 10) {

@@ -42,6 +42,7 @@ struct ChannelVideoProgressRow: View {
                     .foregroundStyle(LiveTheme.textSecondary)
             }
         }
+        .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
     }
 
     private func clockCurrent(_ info: VideoPlaybackInfo?) -> String {

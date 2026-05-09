@@ -31,6 +31,7 @@ struct ContentView: View {
                     VStack(spacing: 18) {
                         ForEach(vm.channels) { ch in
                             ChannelStripView(vm: vm, channel: ch)
+                                .id(ch.id)
                         }
                     }
                     .padding(16)
