@@ -77,7 +77,13 @@ private struct CrispBlockPixelView<Content: View>: View {
     @MainActor
     private func rasterize() {
         let bs = max(6, blockSize)
-        let renderer = ImageRenderer(content: content.frame(width: size.width, height: size.height))
+        // Preto-e-branco antes de subamostrar: menos artefactos de cor no raster e blocos mais legíveis.
+        let source = content
+            .frame(width: size.width, height: size.height)
+            .saturation(0)
+            .contrast(1.18)
+            .brightness(0.02)
+        let renderer = ImageRenderer(content: source)
         renderer.proposedSize = ProposedViewSize(width: size.width, height: size.height)
         // Pixels ≈ pontos × scale = pontos × (displayScale/bs) → ~1 bloco de bs pt por cada célula no raster.
         renderer.scale = displayScale / bs
