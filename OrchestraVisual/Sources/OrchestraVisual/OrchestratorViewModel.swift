@@ -53,7 +53,7 @@ struct ChannelState: Identifiable, Equatable {
     var isPlaying: Bool
     /// Efeito em tempo real no preview (alto contraste / mono simplificado visual)
     var effectOn: Bool
-    /// Áudio embutido no ficheiro de vídeo (independente do leitor de áudio da barra inferior).
+    /// Áudio embutido no vídeo (independente do leitor da barra inferior). Por defeito começa mutado.
     var videoAudioMuted: Bool
 }
 
@@ -61,8 +61,8 @@ struct ChannelState: Identifiable, Equatable {
 final class OrchestratorViewModel: ObservableObject {
 
     private static let defaultChannels = [
-        ChannelState(id: 0, title: "Saída 1 · Fundo widescreen", assignedURL: nil, isPlaying: false, effectOn: false, videoAudioMuted: false),
-        ChannelState(id: 1, title: "Saída 2 · Pano / músico", assignedURL: nil, isPlaying: false, effectOn: false, videoAudioMuted: false),
+        ChannelState(id: 0, title: "Saída 1 · Fundo widescreen", assignedURL: nil, isPlaying: false, effectOn: false, videoAudioMuted: true),
+        ChannelState(id: 1, title: "Saída 2 · Pano / músico", assignedURL: nil, isPlaying: false, effectOn: false, videoAudioMuted: true),
     ]
 
     @Published private(set) var channels: [ChannelState] = defaultChannels
@@ -71,10 +71,16 @@ final class OrchestratorViewModel: ObservableObject {
     @Published private(set) var audioURL: URL?
     @Published private(set) var audioIsPlaying = false
 
+    /// Linha de tempo por canal (só vídeo); actualizado ~4×/s durante reprodução.
+    @Published private(set) var videoPlaybackByChannel: [Int: VideoPlaybackInfo] = [:]
+
     private var players: [Int: AVPlayer] = [:]
     private var audioPlayer: AVAudioPlayer?
     /// Observadores `AVPlayerItemDidPlayToEndTime` por canal para loop local (demos ao vivo).
     private var videoEndObservers: [Int: NSObjectProtocol] = [:]
+    private var playbackTimeObservers: [Int: Any] = [:]
+    /// Evita que o temporizador sobrescreva o slider durante o arrastar.
+    private var scrubbingChannels: Set<Int> = []
 
     // MARK: - Arranque (amostras + previews)
 
@@ -210,11 +216,12 @@ final class OrchestratorViewModel: ObservableObject {
         teardownPlayer(for: channelId)
         switch MediaKind.of(url: url) {
         case .video:
-            let muted = channels.first(where: { $0.id == channelId })?.videoAudioMuted ?? false
+            let muted = channels.first(where: { $0.id == channelId })?.videoAudioMuted ?? true
             let player = AVPlayer(url: url)
             player.isMuted = muted
             players[channelId] = player
             attachVideoLoop(for: channelId)
+            installPlaybackTracking(for: channelId)
             updateChannel(channelId) { ch in
                 ch.assignedURL = url
                 ch.isPlaying = false
@@ -231,11 +238,12 @@ final class OrchestratorViewModel: ObservableObject {
         guard let url = channels.first(where: { $0.id == channelId })?.assignedURL else { return }
         switch MediaKind.of(url: url) {
         case .video:
-            let muted = channels.first(where: { $0.id == channelId })?.videoAudioMuted ?? false
+            let muted = channels.first(where: { $0.id == channelId })?.videoAudioMuted ?? true
             let player = players[channelId] ?? AVPlayer(url: url)
             player.isMuted = muted
             players[channelId] = player
             attachVideoLoop(for: channelId)
+            installPlaybackTracking(for: channelId)
             player.play()
             updateChannel(channelId) { $0.isPlaying = true }
         case .image, .unknown:
@@ -260,7 +268,12 @@ final class OrchestratorViewModel: ObservableObject {
         guard let url = channels.first(where: { $0.id == channelId })?.assignedURL else { return }
         guard MediaKind.of(url: url) == .video else { return }
         players[channelId]?.pause()
-        players[channelId]?.seek(to: .zero)
+        players[channelId]?.seek(to: .zero) { [weak self] finished in
+            guard finished else { return }
+            Task { @MainActor in
+                self?.updatePlaybackProgress(for: channelId)
+            }
+        }
         updateChannel(channelId) { $0.isPlaying = false }
     }
 
@@ -289,7 +302,7 @@ final class OrchestratorViewModel: ObservableObject {
         updateChannel(channelId) { ch in
             ch.assignedURL = nil
             ch.effectOn = false
-            ch.videoAudioMuted = false
+            ch.videoAudioMuted = true
         }
     }
 
@@ -307,6 +320,7 @@ final class OrchestratorViewModel: ObservableObject {
 
     private func teardownPlayer(for channelId: Int) {
         detachVideoLoop(for: channelId)
+        removePlaybackTracking(for: channelId)
         guard let player = players[channelId] else { return }
         player.pause()
         players.removeValue(forKey: channelId)
@@ -338,6 +352,76 @@ final class OrchestratorViewModel: ObservableObject {
 
     func player(for channelId: Int) -> AVPlayer? {
         players[channelId]
+    }
+
+    func videoPlayback(for channelId: Int) -> VideoPlaybackInfo? {
+        videoPlaybackByChannel[channelId]
+    }
+
+    func seekVideo(channelId: Int, fraction: Double) {
+        guard let player = players[channelId],
+              let item = player.currentItem else { return }
+        let dur = CMTimeGetSeconds(item.duration)
+        guard dur.isFinite, dur > 0, !dur.isNaN else { return }
+        let clamped = min(1, max(0, fraction))
+        let t = CMTime(seconds: clamped * dur, preferredTimescale: 600)
+        player.seek(to: t, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+            guard finished else { return }
+            Task { @MainActor in
+                self?.updatePlaybackProgress(for: channelId)
+            }
+        }
+    }
+
+    func setVideoScrubbing(_ channelId: Int, _ active: Bool) {
+        if active {
+            scrubbingChannels.insert(channelId)
+        } else {
+            scrubbingChannels.remove(channelId)
+            updatePlaybackProgress(for: channelId)
+        }
+    }
+
+    private func installPlaybackTracking(for channelId: Int) {
+        removePlaybackTracking(for: channelId)
+        guard let player = players[channelId] else { return }
+
+        let interval = CMTime(seconds: 0.25, preferredTimescale: 600)
+        let token = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] _ in
+            Task { @MainActor in
+                self?.updatePlaybackProgress(for: channelId)
+            }
+        }
+        playbackTimeObservers[channelId] = token
+        updatePlaybackProgress(for: channelId)
+    }
+
+    private func removePlaybackTracking(for channelId: Int) {
+        if let token = playbackTimeObservers[channelId],
+           let player = players[channelId] {
+            player.removeTimeObserver(token)
+        }
+        playbackTimeObservers.removeValue(forKey: channelId)
+        scrubbingChannels.remove(channelId)
+        var next = videoPlaybackByChannel
+        next.removeValue(forKey: channelId)
+        videoPlaybackByChannel = next
+    }
+
+    private func updatePlaybackProgress(for channelId: Int) {
+        guard !scrubbingChannels.contains(channelId),
+              let player = players[channelId],
+              let item = player.currentItem else { return }
+
+        let cur = CMTimeGetSeconds(player.currentTime())
+        let dur = CMTimeGetSeconds(item.duration)
+        let validDur = dur.isFinite && !dur.isNaN && dur > 0 ? dur : 0
+        let validCur = cur.isFinite && !cur.isNaN && cur >= 0 ? cur : 0
+
+        let info = VideoPlaybackInfo(currentSeconds: validCur, durationSeconds: validDur)
+        var next = videoPlaybackByChannel
+        next[channelId] = info
+        videoPlaybackByChannel = next
     }
 
     // MARK: - Áudio

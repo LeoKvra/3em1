@@ -38,6 +38,10 @@ struct ChannelStripView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .liveOutline(focused: channel.isPlaying && channel.assignedURL != nil)
 
+            if isAssignedVideo {
+                ChannelVideoProgressRow(vm: vm, channelId: channel.id)
+            }
+
             HStack(spacing: 10) {
                 Button("Reproduzir") {
                     vm.start(channelId: channel.id)
