@@ -95,6 +95,7 @@ private struct LivePillThumbnail: View {
                 )
                 .frame(width: thumbW, height: thumbH)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .masterIlluminator(vm.masterIlluminator)
             } else {
                 ZStack {
                     Color.black.opacity(0.88)
@@ -146,32 +147,141 @@ struct LivePillButtonStyle: ButtonStyle {
     }
 }
 
-// MARK: - Placeholders Fase 1
+// MARK: - Live Geral (iluminador master + overview)
 
-struct GeneralLivePlaceholder: View {
+struct GeneralLiveWorkspaceView: View {
+    @ObservedObject var vm: OrchestratorViewModel
+
+    private var programSlots: [LiveSlot] {
+        vm.liveSlots.filter { !$0.isGeneral && $0.mappedChannelId != nil }
+    }
+
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.94)
-            VStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("LIVE GERAL")
                     .font(.title2.weight(.heavy))
                     .foregroundStyle(LiveTheme.border)
-                Text("Overview / master · mesmo canvas de referência \(LiveCanvasMetrics.displayLabel).")
+                Text("Iluminador master: uma camada de cor partilhada por todas as saídas (como gelatina no projetor). Escolhe verde, azul ou padrões inspirados em Jamaica / Brasil.")
                     .font(.callout.weight(.medium))
                     .foregroundStyle(LiveTheme.textSecondary)
-                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(24)
+
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text("Camada global")
+                    .font(.subheadline.weight(.heavy))
+                    .foregroundStyle(LiveTheme.textPrimary)
+                Picker("Iluminador master", selection: Binding(
+                    get: { vm.masterIlluminator },
+                    set: { vm.masterIlluminator = $0 }
+                )) {
+                    ForEach(MasterIlluminatorPreset.allCases) { preset in
+                        Text(preset.rawValue).tag(preset)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(minWidth: 220, alignment: .leading)
+                Spacer(minLength: 0)
+            }
+
+            Text(vm.masterIlluminator.detailHint)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(LiveTheme.textSecondary)
+
+            ZStack {
+                Color.black.opacity(0.94)
+
+                Group {
+                    if programSlots.isEmpty {
+                        Text("Sem lives de programa no topo — usa «Live 1», «Live 2» ou + Live.")
+                            .font(.callout.weight(.medium))
+                            .foregroundStyle(LiveTheme.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .padding(24)
+                    } else {
+                        mosaicGrid
+                            .padding(10)
+                    }
+                }
+
+                MasterIlluminatorOverlay(preset: vm.masterIlluminator)
+            }
+            .aspectRatio(LiveCanvasMetrics.aspectRatio, contentMode: .fit)
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(LiveTheme.border.opacity(0.55), lineWidth: 2)
+            )
+
+            Text("Overview · canvas \(LiveCanvasMetrics.displayLabel) · as mesmas cores aparecem nas pré-visualizações de cada live.")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(LiveTheme.textSecondary)
         }
-        .aspectRatio(LiveCanvasMetrics.aspectRatio, contentMode: .fit)
-        .frame(maxWidth: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(LiveTheme.border.opacity(0.55), lineWidth: 2)
-        )
+    }
+
+    private var mosaicGrid: some View {
+        GeometryReader { geo in
+            let spacing: CGFloat = 8
+            let slots = programSlots
+            Group {
+                switch slots.count {
+                case 1:
+                    if let slot = slots.first {
+                        mosaicCell(for: slot)
+                            .frame(width: geo.size.width, height: geo.size.height)
+                    }
+                case 2:
+                    HStack(spacing: spacing) {
+                        ForEach(slots) { slot in
+                            mosaicCell(for: slot)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    }
+                default:
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible(), spacing: spacing),
+                            GridItem(.flexible(), spacing: spacing)
+                        ],
+                        spacing: spacing
+                    ) {
+                        ForEach(slots) { slot in
+                            mosaicCell(for: slot)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func mosaicCell(for slot: LiveSlot) -> some View {
+        if let cid = slot.mappedChannelId,
+           let channel = vm.channels.first(where: { $0.id == cid }) {
+            VStack(spacing: 6) {
+                Text(slot.title.uppercased())
+                    .font(.caption2.weight(.heavy))
+                    .foregroundStyle(LiveTheme.border.opacity(0.95))
+                ChannelPreviewContent(
+                    url: channel.assignedURL,
+                    player: vm.player(for: channel.id),
+                    isPlaying: channel.isPlaying,
+                    effectOn: channel.effectOn,
+                    visualEffectMode: channel.visualEffectMode,
+                    animatePixelEffect: false,
+                    onVideoSingleTap: nil,
+                    onVideoDoubleTap: nil
+                )
+                .aspectRatio(LiveCanvasMetrics.aspectRatio, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+        }
     }
 }
+
+// MARK: - Placeholders Fase 1
 
 struct UnassignedProgramLivePlaceholder: View {
     let title: String

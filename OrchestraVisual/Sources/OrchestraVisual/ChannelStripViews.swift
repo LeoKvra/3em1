@@ -72,6 +72,7 @@ struct ChannelStripView: View {
                     .aspectRatio(LiveCanvasMetrics.aspectRatio, contentMode: .fit)
                     .frame(maxWidth: LiveCanvasMetrics.previewPanelMaxWidth)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .masterIlluminator(vm.masterIlluminator)
                 }
                 Spacer(minLength: 0)
             }

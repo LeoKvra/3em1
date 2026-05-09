@@ -75,6 +75,9 @@ final class OrchestratorViewModel: ObservableObject {
     /// Linha de tempo por canal (só vídeo); actualizado ~4×/s durante reprodução.
     @Published private(set) var videoPlaybackByChannel: [Int: VideoPlaybackInfo] = [:]
 
+    /// Camada de cor global («iluminador») definida na live **Geral**; aplicada a todas as pré-visualizações.
+    @Published var masterIlluminator: MasterIlluminatorPreset = .neutral
+
     private var players: [Int: AVPlayer] = [:]
     private var audioPlayer: AVAudioPlayer?
     /// Observadores `AVPlayerItemDidPlayToEndTime` por canal para loop local (demos ao vivo).

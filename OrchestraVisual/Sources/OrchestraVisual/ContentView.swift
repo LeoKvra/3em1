@@ -102,7 +102,7 @@ struct ContentView: View {
     @ViewBuilder
     private func liveTabBody(for slot: LiveSlot) -> some View {
         if slot.isGeneral {
-            GeneralLivePlaceholder()
+            GeneralLiveWorkspaceView(vm: vm)
         } else if let cid = slot.mappedChannelId,
                   let channel = vm.channels.first(where: { $0.id == cid }) {
             ChannelStripView(vm: vm, channel: channel)
